@@ -1,0 +1,45 @@
+
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Compilar aplicativo Android
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Baixar arquivos do projeto
+        uses: actions/checkout@v4
+
+      - name: Instalar dependências do sistema
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git zip unzip openjdk-17-jdk \
+            python3-pip autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev \
+            libtinfo6 cmake libffi-dev libssl-dev
+
+      - name: Preparar Python
+        run: |
+          python3 -m pip install --user --upgrade pip setuptools wheel
+          python3 -m pip install --user buildozer cython==0.29.36
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Compilar APK
+        run: buildozer -v android debug
+
+      - name: Disponibilizar APK para download
+        uses: actions/upload-artifact@v4
+        with:
+          name: BuscaVisual-APK
+          path: bin/*.apk
+          if-no-files-found: error
